@@ -1,10 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, make_response, Response
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, make_response, Response, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from sqlalchemy import or_
 from io import StringIO, BytesIO
 import csv
 from flask import Response
 from datetime import datetime
+import os
+import requests
 
 from .extensions import db
 from .models import User, Ticket, Interaction
@@ -383,3 +385,52 @@ def reset_password(token):
         flash('Senha redefinida. Faça login.', 'success')
         return redirect(url_for('main.login'))
     return render_template('reset.html', form=form)
+
+
+@main_bp.get('/auth/firebase/enabled')
+def auth_firebase_enabled():
+    return jsonify({'enabled': bool(os.getenv('FIREBASE_API_KEY'))})
+
+
+@main_bp.post('/auth/firebase')
+def auth_firebase():
+    data = request.get_json(silent=True) or {}
+    id_token = data.get('idToken')
+    if not id_token:
+        return jsonify({'error': 'missing idToken'}), 400
+
+    email = name = None
+
+    # Preferir SDK Admin (se configurado)
+    try:
+        import firebase_admin  # type: ignore
+        from firebase_admin import auth as fb_auth  # type: ignore
+        decoded = fb_auth.verify_id_token(id_token)
+        email = decoded.get('email')
+        name = decoded.get('name') or decoded.get('firebase', {}).get('sign_in_provider')
+    except Exception:
+        # Fallback para endpoint público
+        try:
+            resp = requests.get('https://oauth2.googleapis.com/tokeninfo', params={'id_token': id_token}, timeout=10)
+            info = resp.json()
+            # Validar audience (client id web)
+            if isinstance(info, dict) and info.get('aud') == os.getenv('FIREBASE_WEB_CLIENT_ID'):
+                email = info.get('email')
+                name = info.get('name')
+        except Exception:
+            pass
+
+    if not email:
+        return jsonify({'error': 'invalid token'}), 400
+
+    user = User.query.filter_by(email=email.lower()).first()
+    if not user:
+        user = User(name=name or email.split('@')[0], email=email.lower(), role='user')
+        db.session.add(user)
+        db.session.commit()
+
+    if not user.is_active:
+        return jsonify({'error': 'inactive user'}), 403
+
+    login_user(user, remember=True)
+    return jsonify({'ok': True, 'redirect': url_for('main.index')})
