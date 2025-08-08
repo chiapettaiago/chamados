@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card card-elevated mb-3">
+  <div class="card-body">
+    <form class="row g-2" method="get">
+      <div class="col-12 col-md-4">
+        <input name="q" class="form-control" placeholder="Buscar" value="{{ q }}">
+      </div>
+      <div class="col-6 col-md-3">
+        <select name="status" class="form-select">
+          <option value="">Todos Status</option>
+          {% for s in ['aberto','pendente_totvs','pendente_feso','validacao_cliente','fechado'] %}
+            <option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-5 text-end">
+        <button class="btn btn-outline-primary" title="Filtrar" data-bs-toggle="tooltip"><i class="bi bi-funnel"></i></button>
+        <a class="btn btn-outline-success" href="{{ url_for('main.export_csv', q=q, status=status) }}" title="Exportar CSV" data-bs-toggle="tooltip"><i class="bi bi-filetype-csv"></i></a>
+        <a class="btn btn-outline-success" href="{{ url_for('main.export_xlsx', q=q, status=status) }}" title="Exportar XLSX" data-bs-toggle="tooltip"><i class="bi bi-file-earmark-spreadsheet"></i></a>
+        {# FAB é controlado pela base #}
+      </div>
+    </form>
+  </div>
+</div>
+<div class="table-responsive sticky-header">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Status</th>
+        <th>Prioridade</th>
+        <th>Terceirizada</th>
+        <th>Responsável</th>
+        <th>Aberto há</th>
+        <th>Atualizado</th>
+        <th class="text-end"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tickets %}
+        <tr class="{% if t.is_stale_24h %}table-warning{% endif %}">
+          <td>{{ t.id }}</td>
+          <td>
+            <a href="{{ url_for('main.ticket_detail', ticket_id=t.id) }}" class="text-decoration-none">{{ t.title }}</a>
+            {% if t.is_stale_24h %}
+              <span class="ms-1 text-warning" title="Sem interação há +24h" data-bs-toggle="tooltip"><i class="bi bi-exclamation-triangle-fill"></i></span>
+            {% endif %}
+          </td>
+          <td>{{ t.status }}</td>
+          <td>{{ t.priority }}</td>
+          <td>{{ t.vendor or '' }}</td>
+          <td>{{ t.assignee or '' }}</td>
+          <td>{{ (now - t.created_at)|format_timedelta }}</td>
+          <td>{{ t.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td class="text-end">
+            <a href="{{ url_for('main.ticket_edit', ticket_id=t.id) }}" class="btn btn-sm btn-outline-secondary" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal Novo Chamado -->
+<div class="modal fade" id="modalNovoChamado" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo Chamado</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNovoChamado" method="post" action="{{ url_for('main.ticket_new') }}">
+          {{ t_form.hidden_tag() }}
+          <div class="row">
+            <div class="col-md-6 mb-3">{{ t_form.title.label(class='form-label') }}{{ t_form.title(class='form-control') }}</div>
+            <div class="col-md-6 mb-3">{{ t_form.vendor.label(class='form-label') }}{{ t_form.vendor(class='form-control') }}</div>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">{{ t_form.status.label(class='form-label') }}{{ t_form.status(class='form-select') }}</div>
+            <div class="col-md-4 mb-3">{{ t_form.priority.label(class='form-label') }}{{ t_form.priority(class='form-select') }}</div>
+            <div class="col-md-4 mb-3">
+              {{ t_form.assignee.label(class='form-label') }}
+              {% if current_user.role == 'admin' %}
+                {{ t_form.assignee(class='form-control') }}
+              {% else %}
+                <input class="form-control" value="{{ current_user.name }}" disabled>
+                <input type="hidden" name="assignee" value="{{ current_user.name }}">
+              {% endif %}
+            </div>
+          </div>
+          <div class="mb-3">{{ t_form.description.label(class='form-label') }}{{ t_form.description(class='form-control', rows=4) }}</div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+        <button type="submit" form="formNovoChamado" class="btn btn-primary" title="Salvar"><i class="bi bi-check-lg"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

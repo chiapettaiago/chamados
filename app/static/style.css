@@ -1,0 +1,24 @@
+/* Modern UI tweaks */
+:root {
+  --fab-size: 56px;
+}
+
+.card-elevated { box-shadow: 0 8px 24px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.06); }
+
+.table-responsive.sticky-header thead th { position: sticky; top: 0; z-index: 1; background: var(--bs-body-bg); }
+
+.fab {
+  position: fixed; right: 24px; bottom: 24px; width: var(--fab-size); height: var(--fab-size);
+  border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+  z-index: 1030;
+}
+
+/* Timeline for interactions */
+.timeline { list-style: none; padding-left: 0; position: relative; }
+.timeline .item { position: relative; padding-left: 32px; margin-bottom: 16px; }
+.timeline .item::before { content: ""; position: absolute; left: 12px; top: 0; bottom: -8px; width: 2px; background: var(--bs-border-color); }
+.timeline .item::after { content: ""; position: absolute; left: 8px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--bs-primary); }
+
+/* Toast container */
+.toast-container { position: fixed; top: 16px; right: 16px; z-index: 1080; }

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>{{ action }} Chamado</h3>
+<form method="post">
+  {{ form.hidden_tag() }}
+  <div class="row">
+    <div class="col-md-6 mb-3">{{ form.title.label(class='form-label') }}{{ form.title(class='form-control') }}</div>
+    <div class="col-md-6 mb-3">{{ form.vendor.label(class='form-label') }}{{ form.vendor(class='form-control') }}</div>
+  </div>
+  <div class="row">
+    <div class="col-md-4 mb-3">{{ form.status.label(class='form-label') }}{{ form.status(class='form-select') }}</div>
+    <div class="col-md-4 mb-3">{{ form.priority.label(class='form-label') }}{{ form.priority(class='form-select') }}</div>
+    <div class="col-md-4 mb-3">
+      {{ form.assignee.label(class='form-label') }}
+      {% if current_user.role == 'admin' %}
+        {{ form.assignee(class='form-control') }}
+      {% else %}
+        <input class="form-control" value="{{ form.assignee.data }}" disabled>
+        <input type="hidden" name="assignee" value="{{ form.assignee.data }}">
+      {% endif %}
+    </div>
+  </div>
+  <div class="mb-3">{{ form.description.label(class='form-label') }}{{ form.description(class='form-control', rows=5) }}</div>
+  <button class='btn btn-primary' title='Salvar' data-bs-toggle='tooltip'><i class="bi bi-check-lg"></i></button>
+  <a href="{{ url_for('main.index') }}" class="btn btn-secondary" title='Cancelar' data-bs-toggle='tooltip'><i class="bi bi-x-lg"></i></a>
+</form>
+{% endblock %}

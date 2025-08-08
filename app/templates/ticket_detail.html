@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card card-elevated mb-3">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <h3 class="h4 mb-0">Chamado #{{ ticket.id }} - {{ ticket.title }}
+        {% if ticket.is_stale_24h %}
+          <span class="ms-2 text-warning" title="Sem interação há +24h" data-bs-toggle="tooltip"><i class="bi bi-exclamation-triangle-fill"></i></span>
+        {% endif %}
+      </h3>
+      <form action="{{ url_for('main.ticket_delete', ticket_id=ticket.id) }}" method="post" onsubmit="return confirm('Excluir chamado?');" class="d-flex gap-2">
+        <span class="align-self-center me-2 text-muted" title="Aberto há">⏱ {{ (now - ticket.created_at)|format_timedelta }}</span>
+        <a href="{{ url_for('main.ticket_edit', ticket_id=ticket.id) }}" class="btn btn-outline-secondary" title="Editar" data-bs-toggle="tooltip"><i class="bi bi-pencil-square"></i></a>
+        <button class="btn btn-outline-danger" title="Excluir" data-bs-toggle="tooltip"><i class="bi bi-trash"></i></button>
+      </form>
+    </div>
+    <p class="text-muted mb-1">Status: {{ ticket.status }} | Prioridade: {{ ticket.priority }}</p>
+    <p class="text-muted">Terceirizada: {{ ticket.vendor or '-' }} | Responsável: {{ ticket.assignee or '-' }}</p>
+    <p>{{ ticket.description }}</p>
+  </div>
+</div>
+
+<div class="card card-elevated">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Interações</h5>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalInteracao" title="Nova Interação"><i class="bi bi-plus-lg"></i></button>
+    </div>
+    <ul class="timeline mt-3">
+      {% for i in ticket.interactions %}
+        <li class="item">
+          <div class="d-flex justify-content-between">
+            <strong>{{ i.author }}</strong>
+            <small class="text-muted">{{ i.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+          </div>
+          <div class="mt-1">{{ i.content }}</div>
+        </li>
+      {% else %}
+        <li class="item"><em>Sem interações</em></li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- Modal de Interação -->
+<div class="modal fade" id="modalInteracao" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Adicionar Interação</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formInteracao" method="post" action="{{ url_for('main.interaction_add', ticket_id=ticket.id) }}">
+          {{ i_form.hidden_tag() }}
+          <div class="mb-3">{{ i_form.content(class='form-control', rows=4, placeholder='Descreva a interação...') }}</div>
+          <div class="mb-3">{{ i_form.author(class='form-control', placeholder='Autor (ex.: {{ ticket.vendor }})') }}</div>
+          <div class="mb-3">
+            {{ i_form.created_at.label(class='form-label') }}
+            {{ i_form.created_at(class='form-control', value=(ticket.last_vendor_contact_at or now).strftime('%Y-%m-%dT%H:%M')) }}
+            <div class="form-text">Sugerido: última resposta do fornecedor ou agora.</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+        <button type="submit" form="formInteracao" class="btn btn-primary" title="Salvar"><i class="bi bi-check-lg"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.so
+.venv/
+.env
+.env.*
+*.env
+
+# Flask/SQLAlchemy
+instance/
+*.db
+*.sqlite3
+
+# Jupyter/VSCode
+.ipynb_checkpoints/
+.vscode/
+
+# Testing/coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS/Tools
+.DS_Store
+Thumbs.db
+.idea/
+*.log
+
+# Node (if any)
+node_modules/
+
+# Build
+build/
+dist/
