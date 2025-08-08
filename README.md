@@ -52,7 +52,7 @@ Aplicação Flask para gerenciar chamados e interações de uma firma terceiriza
    flask run
    ```
 
-Acesse http://127.0.0.1:5000
+Acesse http://127.0.0.1:8443
 
 ## Estrutura
 - `app/__init__.py`: criação do app, blueprints
